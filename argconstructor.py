@@ -76,6 +76,7 @@ class ArgConstructor(object):
         result_list = []
         for argument in self._arguments_list:
             if self._arguments_list[argument]['action'] == 'repeat':
+                # If action == 'repeat' act like we have several identical parameters
                 for arg in kwargs.get(argument):
                     result_list.append(self._parse_arg(argument, self._arguments_list[argument], arg))
             else:
