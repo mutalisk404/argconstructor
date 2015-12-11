@@ -45,7 +45,12 @@ class ArgConstructor(object):
         self._arguments_list[name] = params
 
     @staticmethod
-    def _parse_arg(name, parameters, value):
+    def _check_against_choices(name, value, choices):
+        if choices is not None and value not in choices:
+            raise ValueError("Parameter %s must be one of the %s, got %s instead" %(name, choices, value))
+
+    @classmethod
+    def _parse_arg(cls, name, parameters, value):
         if parameters['takes_arguments']:
             # If no value was given
             if value is None:
@@ -60,11 +65,15 @@ class ArgConstructor(object):
                     return ''
 
             if parameters['action'] == 'append':
+                for arg in value:
+                    cls._check_against_choices(name, arg, parameters['choices'])
+
                 return parameters['flag_separator'].join((
                         parameters['flag'],
                         parameters['args_separator'].join([str(i) for i in value])
                 ))
             else:
+                cls._check_against_choices(name, value, parameters['choices'])
                 return parameters['flag_separator'].join((parameters['flag'], str(value)))
         else:  # Param takes no arguments
             if value is not None:
