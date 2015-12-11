@@ -24,6 +24,13 @@ class ArgConstructor(object):
         if choices and (not iter(choices) or len(choices) == 0):
             raise ValueError("choices must be a non-zero long iterable")
 
+        # Basic parameters checks and type casts
+        flag = str(flag)
+        takes_arguments = bool(takes_arguments)
+        mandatory = bool(mandatory)
+        flag_separator = str(flag_separator)
+        args_separator = str(args_separator)
+
         params = {}
         for param in ('takes_arguments',
                       'mandatory',
