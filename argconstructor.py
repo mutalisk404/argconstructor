@@ -1,7 +1,8 @@
 from collections import OrderedDict
 
 class ArgConstructor(object):
-    def __init__(self):
+    def __init__(self, parameters_separator=' '):
+        self._parameters_separator = str(parameters_separator)
         self._arguments_list = OrderedDict()
 
     def add_arguments(self, name, flag,
