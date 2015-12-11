@@ -14,6 +14,9 @@ class ArgConstructor(object):
                       choices=None,
                       action=None,
                       args_separator=' '):
+        # Check if we already have that parameter
+        if name in self._arguments_list:
+            raise ValueError("parameter %s already exists" % name)
 
         # Argument checks
         if action and action not in ('append', 'repeat'):
