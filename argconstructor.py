@@ -18,10 +18,10 @@ class ArgConstructor(object):
         if name in self._arguments_list:
             raise ValueError("parameter %s already exists" % name)
 
-        # Argument checks
-        if action and action not in ('append', 'repeat'):
-            raise ValueError("action must be either 'append' or 'repeat'")
-        if choices and (not iter(choices) or len(choices) == 0):
+        # Advanced argument checks
+        if action not in (None, 'append', 'repeat'):
+            raise ValueError("action must be either 'append' or 'repeat', got %s instead" % action)
+        if choices is not None and (not hasattr(choices, '__iter__') or len(choices) == 0):
             raise ValueError("choices must be a non-zero long iterable")
 
         # Basic parameters checks and type casts
