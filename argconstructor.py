@@ -73,7 +73,15 @@ class ArgConstructor(object):
                 return ''
 
     def parse_args(self, **kwargs):
-        pass
+        result_list = []
+        for argument in self._arguments_list:
+            if self._arguments_list[argument]['action'] == 'repeat':
+                for arg in kwargs.get(argument):
+                    result_list.append(self._parse_arg(argument, self._arguments_list[argument], arg))
+            else:
+                result_list.append(self._parse_arg(argument, self._arguments_list[argument], kwargs.get(argument)))
+
+        return self._parameters_separator.join(result_list)
 
 if __name__ == '__main__':
     a = ArgConstructor()
