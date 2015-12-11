@@ -83,9 +83,3 @@ class ArgConstructor(object):
                 result_list.append(self._parse_arg(argument, self._arguments_list[argument], kwargs.get(argument)))
 
         return self._parameters_separator.join(result_list)
-
-if __name__ == '__main__':
-    a = ArgConstructor()
-    a.add_arguments('file', '-f', True, action='append')
-    a.add_arguments('zaz', '-z', True)
-    print a.parse_args(file=('aaa', 'bbb', 'ccc'))
