@@ -44,6 +44,34 @@ class ArgConstructor(object):
 
         self._arguments_list[name] = params
 
+    @staticmethod
+    def _parse_arg(name, parameters, value):
+        if parameters['takes_arguments']:
+            # If no value was given
+            if value is None:
+                if parameters['default'] is not None:
+                    # Supply default if possible
+                    value = parameters['default']
+                elif parameters['mandatory']:
+                    # Raise if mandatory but have no value
+                    raise ValueError("Parameter '%s' is mandatory and takes argument(s)" % name)
+                else:
+                    # Else make no difference
+                    return ''
+
+            if parameters['action'] == 'append':
+                return parameters['flag_separator'].join((
+                        parameters['flag'],
+                        parameters['args_separator'].join([str(i) for i in value])
+                ))
+            else:
+                return parameters['flag_separator'].join((parameters['flag'], str(value)))
+        else:  # Param takes no arguments
+            if value is not None:
+                return parameters['flag']
+            else:
+                return ''
+
     def parse_args(self, **kwargs):
         pass
 
