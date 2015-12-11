@@ -62,7 +62,7 @@ class ArgConstructor(object):
                     raise ValueError("Parameter '%s' is mandatory and takes argument(s)" % name)
                 else:
                     # Else make no difference
-                    return ''
+                    return None
 
             if parameters['action'] == 'append':
                 for arg in value:
@@ -70,7 +70,7 @@ class ArgConstructor(object):
 
                 return parameters['flag_separator'].join((
                         parameters['flag'],
-                        parameters['args_separator'].join([str(i) for i in value])
+                        parameters['args_separator'].join([str(i) if i is not None else '' for i in value])
                 ))
             else:
                 cls._check_against_choices(name, value, parameters['choices'])
@@ -79,7 +79,12 @@ class ArgConstructor(object):
             if value is not None:
                 return parameters['flag']
             else:
-                return ''
+                return None
+
+    @staticmethod
+    def _append_if_not_none(container, value):
+        if value is not None:
+            container.append(value)
 
     def parse_args(self, **kwargs):
         result_list = []
@@ -87,8 +92,14 @@ class ArgConstructor(object):
             if self._arguments_list[argument]['action'] == 'repeat':
                 # If action == 'repeat' act like we have several identical parameters
                 for arg in kwargs.get(argument):
-                    result_list.append(self._parse_arg(argument, self._arguments_list[argument], arg))
+                    self._append_if_not_none(
+                        result_list,
+                        self._parse_arg(argument, self._arguments_list[argument], arg)
+                    )
             else:
-                result_list.append(self._parse_arg(argument, self._arguments_list[argument], kwargs.get(argument)))
+                self._append_if_not_none(
+                    result_list,
+                    self._parse_arg(argument, self._arguments_list[argument], kwargs.get(argument))
+                )
 
         return self._parameters_separator.join(result_list)
