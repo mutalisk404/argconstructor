@@ -53,7 +53,7 @@ class ArgConstructor(object):
                     # Supply default if possible
                     value = parameters['default']
                 elif parameters['mandatory']:
-                    # Raise if mandatory but have no value
+                    # Raise if the parameter is mandatory
                     raise ValueError("Parameter '%s' is mandatory and takes argument(s)" % name)
                 else:
                     # Else make no difference
