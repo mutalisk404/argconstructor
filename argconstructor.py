@@ -85,4 +85,6 @@ class ArgConstructor(object):
 
 if __name__ == '__main__':
     a = ArgConstructor()
-    a.add_arguments('file', '-f', True, argument_type=5)
+    a.add_arguments('file', '-f', True, action='append')
+    a.add_arguments('zaz', '-z', True)
+    print a.parse_args(file=('aaa', 'bbb', 'ccc'))
