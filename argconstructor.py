@@ -1,6 +1,8 @@
+from collections import OrderedDict
+
 class ArgConstructor(object):
     def __init__(self):
-        self._arguments_list = {}
+        self._arguments_list = OrderedDict()
 
     def add_arguments(self, name, flag,
                       takes_arguments=False,
@@ -18,7 +20,7 @@ class ArgConstructor(object):
         if choices and (not iter(choices) or len(choices) == 0):
             raise ValueError("choices must be a non-zero long iterable")
         if argument_type and not isinstance(argument_type, type):
-            raise ValueError("argument_type must be a type")
+            raise TypeError("argument_type must be a type")
 
         params = {}
         for param in ('takes_arguments',
