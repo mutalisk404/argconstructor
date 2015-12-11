@@ -32,7 +32,8 @@ class ArgConstructor(object):
         args_separator = str(args_separator)
 
         params = {}
-        for param in ('takes_arguments',
+        for param in ('flag',
+                      'takes_arguments',
                       'mandatory',
                       'default',
                       'flag_separator',
