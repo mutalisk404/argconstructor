@@ -10,7 +10,6 @@ class ArgConstructor(object):
                       takes_arguments=False,
                       mandatory=False,
                       default=None,
-                      argument_type=None,
                       flag_separator=' ',
                       choices=None,
                       action=None,
@@ -21,14 +20,11 @@ class ArgConstructor(object):
             raise ValueError("action must be either 'append' or 'repeat'")
         if choices and (not iter(choices) or len(choices) == 0):
             raise ValueError("choices must be a non-zero long iterable")
-        if argument_type and not isinstance(argument_type, type):
-            raise TypeError("argument_type must be a type")
 
         params = {}
         for param in ('takes_arguments',
                       'mandatory',
                       'default',
-                      'argument_type',
                       'flag_separator',
                       'choices',
                       'action',
