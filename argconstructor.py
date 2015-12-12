@@ -12,15 +12,12 @@ class ArgConstructor(object):
                       default=None,
                       flag_separator=' ',
                       choices=None,
-                      action=None,
                       args_separator=' '):
         # Check if we already have that parameter
         if name in self._arguments_list:
             raise ValueError("parameter %s already exists" % name)
 
         # Advanced argument checks
-        if action not in (None, 'append', 'repeat'):
-            raise ValueError("action must be either 'append' or 'repeat', got %s instead" % action)
         if choices is not None and (not hasattr(choices, '__iter__') or len(choices) == 0):
             raise ValueError("choices must be a non-zero long iterable")
 
@@ -38,7 +35,6 @@ class ArgConstructor(object):
                       'default',
                       'flag_separator',
                       'choices',
-                      'action',
                       'args_separator'):
             params[param] = locals()[param]
 
@@ -64,17 +60,18 @@ class ArgConstructor(object):
                     # Else make no difference
                     return None
 
-            if parameters['action'] == 'append':
-                for arg in value:
-                    cls._check_against_choices(name, arg, parameters['choices'])
+            if not hasattr(value, '__iter__'):
+                # If non-iterable value is given make it a tuple with one element
+                value = (value, )
 
-                return parameters['flag_separator'].join((
-                        parameters['flag'],
-                        parameters['args_separator'].join([str(i) if i is not None else '' for i in value])
-                ))
-            else:
-                cls._check_against_choices(name, value, parameters['choices'])
-                return parameters['flag_separator'].join((parameters['flag'], str(value)))
+            for arg in value:
+                # Check if all the values are from choices, if supplied
+                cls._check_against_choices(name, arg, parameters['choices'])
+
+            return parameters['flag_separator'].join((
+                    parameters['flag'],
+                    parameters['args_separator'].join([str(i) if i is not None else '' for i in value])
+            ))
         else:  # Param takes no arguments
             if value is not None:
                 return parameters['flag']
@@ -89,17 +86,9 @@ class ArgConstructor(object):
     def parse_args(self, **kwargs):
         result_list = []
         for argument in self._arguments_list:
-            if self._arguments_list[argument]['action'] == 'repeat':
-                # If action == 'repeat' act like we have several identical parameters
-                for arg in kwargs.get(argument):
-                    self._append_if_not_none(
-                        result_list,
-                        self._parse_arg(argument, self._arguments_list[argument], arg)
-                    )
-            else:
-                self._append_if_not_none(
-                    result_list,
-                    self._parse_arg(argument, self._arguments_list[argument], kwargs.get(argument))
-                )
+            self._append_if_not_none(
+                result_list,
+                self._parse_arg(argument, self._arguments_list[argument], kwargs.get(argument))
+            )
 
         return self._parameters_separator.join(result_list)
