@@ -27,11 +27,8 @@ class ArgConstructor(object):
         mandatory = bool(mandatory)
         flag_separator = str(flag_separator)
         args_separator = str(args_separator)
-        for arg in requires, required_by:
-            if hasattr(arg, '__iter__'):
-                arg = (str(dep) for dep in arg)
-            else:
-                arg = str(arg)
+        requires = self._convert_to_iterable_if_not_none(requires, str)
+        required_by = self._convert_to_iterable_if_not_none(required_by, str)
 
         # Advanced argument checks
         if choices is not None and (not hasattr(choices, '__iter__') or len(choices) == 0):
@@ -101,13 +98,13 @@ class ArgConstructor(object):
             container.append(value)
 
     @staticmethod
-    def _convert_to_iterable_if_not_none(arg):
+    def _convert_to_iterable_if_not_none(arg, cast_func=lambda x: x):
         if arg is None:
             return None
         elif not hasattr(arg, '__iter__'):
-            return (arg, )
+            return cast_func(arg),
         else:
-            return arg
+            return cast_func(arg)
 
     def parse_args(self, **kwargs):
         kwargs = {x: y for x, y in kwargs.items() if y is not None}  # Eliminate kwargs which have 'None' value
