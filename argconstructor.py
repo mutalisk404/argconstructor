@@ -129,6 +129,8 @@ class ArgConstructor(object):
             for dep in dependants[argument]:
                 if dep not in kwargs and self._arguments_list[dep]['default'] is None:
                     raise ValueError("Parameter '%s' requires '%s', but it's not supplied" % (argument, dep))
+                else:
+                    self._arguments_list[dep]['mandatory'] = True
 
         result_list = []
         for argument in self._arguments_list:
