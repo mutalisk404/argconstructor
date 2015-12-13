@@ -67,7 +67,9 @@ class ArgConstructor(object):
             # If non-iterable value is given make it a tuple with one element
             value = (value, )
 
-        if len(value) < parameters['min_arguments'] or (parameters['max_arguments'] is not None and len(value) > parameters['max_arguments']):
+        if parameters['min_arguments'] == parameters['max_arguments'] == 0:
+            return parameters['flag']
+        elif len(value) < parameters['min_arguments'] or (parameters['max_arguments'] is not None and len(value) > parameters['max_arguments']):
             raise ValueError(
                     "Parameter '%s' takes from %d to %s arguments, got %d instead" % (
                         name,
