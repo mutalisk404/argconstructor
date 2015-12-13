@@ -62,12 +62,12 @@ class ArgConstructor(object):
     @classmethod
     def _parse_arg(cls, name, parameters, value):
         if value is None:
-            if parameters['default'] is not None:
-                # Supply default if possible
-                value = parameters['default']
-            elif parameters['mandatory']:
-                # Raise if the parameter is mandatory
-                raise ValueError("Parameter '%s' is mandatory but not supplied" % name)
+            if parameters['mandatory']:
+                if parameters['default'] is not None:
+                    # Supply default if possible
+                    value = parameters['default']
+                else:
+                    raise ValueError("Parameter '%s' is mandatory but not supplied" % name)
             else:
                 # Else make no difference
                 return None
