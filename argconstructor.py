@@ -18,10 +18,6 @@ class ArgConstructor(object):
         if name in self._arguments_list:
             raise ValueError("parameter %s already exists" % name)
 
-        # Advanced argument checks
-        if choices is not None and (not hasattr(choices, '__iter__') or len(choices) == 0):
-            raise ValueError("choices must be a non-zero long iterable")
-
         # Basic parameters checks and type casts
         flag = str(flag)
         min_arguments = int(min_arguments) if int(min_arguments) >= 0 else 0
@@ -29,6 +25,12 @@ class ArgConstructor(object):
         mandatory = bool(mandatory)
         flag_separator = str(flag_separator)
         args_separator = str(args_separator)
+
+        # Advanced argument checks
+        if choices is not None and (not hasattr(choices, '__iter__') or len(choices) == 0):
+            raise ValueError("choices must be a non-zero long iterable")
+        if max_arguments is not None and max_arguments < min_arguments:
+            raise ValueError("'min_arguments' must be greater or equal than 'max_arguments'")
 
         params = {}
         for param in ('flag',
