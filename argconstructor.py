@@ -13,6 +13,8 @@ class ArgConstructor(object):
                       max_arguments=None,
                       flag_separator=' ',
                       choices=None,
+                      requires=None,
+                      required_by=None,
                       args_separator=' '):
         # Check if we already have that parameter
         if name in self._arguments_list:
@@ -25,6 +27,11 @@ class ArgConstructor(object):
         mandatory = bool(mandatory)
         flag_separator = str(flag_separator)
         args_separator = str(args_separator)
+        for arg in requires, required_by:
+            if hasattr(arg, '__iter__'):
+                arg = (str(dep) for dep in arg)
+            else:
+                arg = str(arg)
 
         # Advanced argument checks
         if choices is not None and (not hasattr(choices, '__iter__') or len(choices) == 0):
@@ -40,6 +47,8 @@ class ArgConstructor(object):
                       'max_arguments',
                       'flag_separator',
                       'choices',
+                      'requires',
+                      'required_by',
                       'args_separator'):
             params[param] = locals()[param]
 
@@ -94,6 +103,33 @@ class ArgConstructor(object):
             container.append(value)
 
     def parse_args(self, **kwargs):
+        kwargs = {x: y for x, y in kwargs.items() if y is not None}  # Eliminate kwargs which have 'None' value
+
+        # Check if all the dependencies are met
+        dependants = {}
+        for argument in self._arguments_list:
+            if argument not in dependants:
+                dependants[argument] = set()
+            if self._arguments_list[argument]['requires'] is not None:
+                if hasattr(self._arguments_list[argument]['requires'], '__iter__'):
+                    dependants[argument].update(self._arguments_list[argument]['requires'])
+                else:
+                    dependants[argument].add(self._arguments_list[argument]['requires'])
+            if self._arguments_list[argument]['required_by'] is not None:
+                if hasattr(self._arguments_list[argument]['required_by'], '__iter__'):
+                    for parameter in self._arguments_list[argument]['required_by']:
+                        if parameter not in dependants:
+                            dependants[parameter] = set()
+                        dependants[parameter].add(argument)
+                else:
+                    if self._arguments_list[argument]['required_by'] not in dependants:
+                        dependants[self._arguments_list[argument]['required_by']] = set()
+                    dependants[self._arguments_list[argument]['required_by']].add(argument)
+        for argument in kwargs:
+            for dep in dependants[argument]:
+                if dep not in kwargs and self._arguments_list[dep]['default'] is None:
+                    raise ValueError("Parameter '%s' requires '%s', but it's not supplied" % (argument, dep))
+
         result_list = []
         for argument in self._arguments_list:
             self._append_if_not_none(
