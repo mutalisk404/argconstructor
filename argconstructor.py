@@ -43,7 +43,7 @@ class ArgConstructor(object):
     @staticmethod
     def _check_against_choices(name, value, choices):
         if choices is not None and value not in choices:
-            raise ValueError("Parameter %s must be one of the %s, got %s instead" %(name, choices, value))
+            raise ValueError("Parameter %s must be one of the %s, got %s instead" % (name, choices, value))
 
     @classmethod
     def _parse_arg(cls, name, parameters, value):
