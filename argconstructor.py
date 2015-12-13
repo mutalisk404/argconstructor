@@ -7,9 +7,10 @@ class ArgConstructor(object):
         self._arguments_list = OrderedDict()
 
     def add_arguments(self, name, flag,
-                      takes_arguments=False,
                       mandatory=False,
                       default=None,
+                      min_arguments=0,
+                      max_arguments=None,
                       flag_separator=' ',
                       choices=None,
                       args_separator=' '):
@@ -23,16 +24,18 @@ class ArgConstructor(object):
 
         # Basic parameters checks and type casts
         flag = str(flag)
-        takes_arguments = bool(takes_arguments)
+        min_arguments = int(min_arguments) if int(min_arguments) >= 0 else 0
+        max_arguments = int(max_arguments) if max_arguments is not None else None
         mandatory = bool(mandatory)
         flag_separator = str(flag_separator)
         args_separator = str(args_separator)
 
         params = {}
         for param in ('flag',
-                      'takes_arguments',
                       'mandatory',
                       'default',
+                      'min_arguments',
+                      'max_arguments',
                       'flag_separator',
                       'choices',
                       'args_separator'):
@@ -47,36 +50,39 @@ class ArgConstructor(object):
 
     @classmethod
     def _parse_arg(cls, name, parameters, value):
-        if parameters['takes_arguments']:
-            # If no value was given
-            if value is None:
-                if parameters['default'] is not None:
-                    # Supply default if possible
-                    value = parameters['default']
-                elif parameters['mandatory']:
-                    # Raise if the parameter is mandatory
-                    raise ValueError("Parameter '%s' is mandatory and takes argument(s)" % name)
-                else:
-                    # Else make no difference
-                    return None
-
-            if not hasattr(value, '__iter__'):
-                # If non-iterable value is given make it a tuple with one element
-                value = (value, )
-
-            for arg in value:
-                # Check if all the values are from choices, if supplied
-                cls._check_against_choices(name, arg, parameters['choices'])
-
-            return parameters['flag_separator'].join((
-                    parameters['flag'],
-                    parameters['args_separator'].join([str(i) if i is not None else '' for i in value])
-            ))
-        else:  # Param takes no arguments
-            if value is not None:
-                return parameters['flag']
+        if value is None:
+            if parameters['default'] is not None:
+                # Supply default if possible
+                value = parameters['default']
+            elif parameters['mandatory']:
+                # Raise if the parameter is mandatory
+                raise ValueError("Parameter '%s' is mandatory but not supplied" % name)
             else:
+                # Else make no difference
                 return None
+
+        if not hasattr(value, '__iter__'):
+            # If non-iterable value is given make it a tuple with one element
+            value = (value, )
+
+        if len(value) < parameters['min_arguments'] or (parameters['max_arguments'] is not None and len(value) > parameters['max_arguments']):
+            raise ValueError(
+                    "Parameter '%s' takes from %d to %s arguments, got %d instead" % (
+                        name,
+                        parameters['min_arguments'],
+                        parameters['max_arguments'] if parameters['max_arguments'] is not None else "infinite number of",
+                        len(value)
+                    )
+            )
+
+        for arg in value:
+            # Check if all the values are from choices, if supplied
+            cls._check_against_choices(name, arg, parameters['choices'])
+
+        return parameters['flag_separator'].join((
+                parameters['flag'],
+                parameters['args_separator'].join([str(i) if i is not None else '' for i in value])
+        ))
 
     @staticmethod
     def _append_if_not_none(container, value):
