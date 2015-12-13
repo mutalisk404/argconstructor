@@ -61,6 +61,8 @@ class ArgConstructor(object):
 
     @classmethod
     def _parse_arg(cls, name, parameters, value):
+        value = cls._convert_to_iterable_if_not_none(value)
+
         if value is None:
             if parameters['mandatory']:
                 if parameters['default'] is not None:
@@ -71,10 +73,6 @@ class ArgConstructor(object):
             else:
                 # Else make no difference
                 return None
-
-        if not hasattr(value, '__iter__'):
-            # If non-iterable value is given make it a tuple with one element
-            value = (value, )
 
         if parameters['min_arguments'] == parameters['max_arguments'] == 0:
             return parameters['flag']
@@ -102,29 +100,32 @@ class ArgConstructor(object):
         if value is not None:
             container.append(value)
 
+    @staticmethod
+    def _convert_to_iterable_if_not_none(arg):
+        if arg is None:
+            return None
+        elif not hasattr(arg, '__iter__'):
+            return (arg, )
+        else:
+            return arg
+
     def parse_args(self, **kwargs):
         kwargs = {x: y for x, y in kwargs.items() if y is not None}  # Eliminate kwargs which have 'None' value
 
         # Check if all the dependencies are met
         dependants = {}
         for argument in self._arguments_list:
+            argument_requires = self._convert_to_iterable_if_not_none(self._arguments_list[argument]['requires'])
+            argument_required_by = self._convert_to_iterable_if_not_none(self._arguments_list[argument]['required_by'])
             if argument not in dependants:
                 dependants[argument] = set()
-            if self._arguments_list[argument]['requires'] is not None:
-                if hasattr(self._arguments_list[argument]['requires'], '__iter__'):
-                    dependants[argument].update(self._arguments_list[argument]['requires'])
-                else:
-                    dependants[argument].add(self._arguments_list[argument]['requires'])
-            if self._arguments_list[argument]['required_by'] is not None:
-                if hasattr(self._arguments_list[argument]['required_by'], '__iter__'):
-                    for parameter in self._arguments_list[argument]['required_by']:
-                        if parameter not in dependants:
-                            dependants[parameter] = set()
-                        dependants[parameter].add(argument)
-                else:
-                    if self._arguments_list[argument]['required_by'] not in dependants:
-                        dependants[self._arguments_list[argument]['required_by']] = set()
-                    dependants[self._arguments_list[argument]['required_by']].add(argument)
+            if argument_requires is not None:
+                dependants[argument].update(argument_requires)
+            if argument_required_by is not None:
+                for parameter in argument_required_by:
+                    if parameter not in dependants:
+                        dependants[parameter] = set()
+                    dependants[parameter].add(argument)
         for argument in kwargs:
             for dep in dependants[argument]:
                 if dep not in kwargs and self._arguments_list[dep]['default'] is None:
