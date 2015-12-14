@@ -58,8 +58,6 @@ class ArgConstructor(object):
 
     @classmethod
     def _parse_arg(cls, name, parameters, value):
-        value = cls._convert_to_iterable_if_not_none(value)
-
         if value is None:
             if parameters['mandatory']:
                 if parameters['default'] is not None:
@@ -70,6 +68,8 @@ class ArgConstructor(object):
             else:
                 # Else make no difference
                 return None
+
+        value = cls._convert_to_iterable_if_not_none(value)
 
         if parameters['min_arguments'] == parameters['max_arguments'] == 0:
             return parameters['flag']
