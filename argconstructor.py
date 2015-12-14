@@ -104,7 +104,7 @@ class ArgConstructor(object):
         elif not hasattr(arg, '__iter__'):
             return cast_func(arg),
         else:
-            return cast_func(arg)
+            return [cast_func(x) for x in arg]
 
     def parse_args(self, **kwargs):
         kwargs = {x: y for x, y in kwargs.items() if y is not None}  # Eliminate kwargs which have 'None' value
