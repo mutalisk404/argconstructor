@@ -15,6 +15,7 @@ class ArgConstructor(object):
                       choices=None,
                       requires=None,
                       required_by=None,
+                      conflicts_with=None,
                       args_separator=' '):
         # Check if we already have that parameter
         if name in self._arguments_list:
@@ -46,6 +47,7 @@ class ArgConstructor(object):
                       'choices',
                       'requires',
                       'required_by',
+                      'conflicts_with',
                       'args_separator'):
             params[param] = locals()[param]
 
@@ -106,10 +108,7 @@ class ArgConstructor(object):
         else:
             return [cast_func(x) for x in arg]
 
-    def parse_args(self, **kwargs):
-        kwargs = {x: y for x, y in kwargs.items() if y is not None}  # Eliminate kwargs which have 'None' value
-
-        # Check if all the dependencies are met
+    def _check_dependencies(self, kwargs):
         dependants = {}
         for argument in self._arguments_list:
             argument_requires = self._convert_to_iterable_if_not_none(self._arguments_list[argument]['requires'])
@@ -129,6 +128,20 @@ class ArgConstructor(object):
                     raise ValueError("Parameter '%s' requires '%s', but it's not supplied" % (argument, dep))
                 else:
                     self._arguments_list[dep]['mandatory'] = True
+
+    def _check_for_conflicts(self, kwargs):
+        for argument in kwargs:
+            argument_conflicts_with = self._convert_to_iterable_if_not_none(self._arguments_list[argument]['conflicts_with'])
+            if argument_conflicts_with is not None:
+                for conflict in argument_conflicts_with:
+                    if self._arguments_list[conflict]['mandatory'] or conflict in kwargs:
+                        raise ValueError("Argument %s conflicts with %s" % (argument, conflict))
+
+    def parse_args(self, **kwargs):
+        kwargs = {x: y for x, y in kwargs.items() if y is not None}  # Eliminate kwargs which have 'None' value
+
+        self._check_dependencies(kwargs)
+        self._check_for_conflicts(kwargs)
 
         result_list = []
         for argument in self._arguments_list:
