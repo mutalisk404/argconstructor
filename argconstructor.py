@@ -28,8 +28,9 @@ class ArgConstructor(object):
         mandatory = bool(mandatory)
         flag_separator = str(flag_separator)
         args_separator = str(args_separator)
-        requires = self._convert_to_iterable_if_not_none(requires, str)
-        required_by = self._convert_to_iterable_if_not_none(required_by, str)
+        requires = self._convert_to_iterable(requires, str)
+        required_by = self._convert_to_iterable(required_by, str)
+        conflicts_with = self._convert_to_iterable(conflicts_with, str)
 
         # Advanced argument checks
         if choices is not None and (not hasattr(choices, '__iter__') or len(choices) == 0):
@@ -71,7 +72,7 @@ class ArgConstructor(object):
                 # Else make no difference
                 return None
 
-        value = cls._convert_to_iterable_if_not_none(value)
+        value = cls._convert_to_iterable(value)
 
         if parameters['min_arguments'] == parameters['max_arguments'] == 0:
             return parameters['flag']
@@ -100,28 +101,34 @@ class ArgConstructor(object):
             container.append(value)
 
     @staticmethod
-    def _convert_to_iterable_if_not_none(arg, cast_func=lambda x: x):
+    def _convert_to_iterable(arg, cast_func=lambda x: x):
+        """Converts any object to an iterable
+
+        :param arg: any object to convest to iterable
+        :param cast_func: function to apply to each element of the iterable
+        :return:
+            - list with one element if arg is not iterable;
+            - empty list if arg is None;
+            - list of with the same elements as arg has is arg is itself an iterable
+        :rtype: list
+        """
         if arg is None:
-            return None
+            return []
         elif not hasattr(arg, '__iter__'):
-            return cast_func(arg),
+            return [cast_func(arg)]
         else:
             return [cast_func(x) for x in arg]
 
     def _check_dependencies(self, kwargs):
         dependants = {}
         for argument in self._arguments_list:
-            argument_requires = self._convert_to_iterable_if_not_none(self._arguments_list[argument]['requires'])
-            argument_required_by = self._convert_to_iterable_if_not_none(self._arguments_list[argument]['required_by'])
             if argument not in dependants:
                 dependants[argument] = set()
-            if argument_requires is not None:
-                dependants[argument].update(argument_requires)
-            if argument_required_by is not None:
-                for parameter in argument_required_by:
-                    if parameter not in dependants:
-                        dependants[parameter] = set()
-                    dependants[parameter].add(argument)
+            dependants[argument].update(self._arguments_list[argument]['requires'])
+            for parameter in self._arguments_list[argument]['required_by']:
+                if parameter not in dependants:
+                    dependants[parameter] = set()
+                dependants[parameter].add(argument)
         for argument in kwargs:
             for dep in dependants[argument]:
                 if dep not in kwargs and self._arguments_list[dep]['default'] is None:
@@ -131,11 +138,9 @@ class ArgConstructor(object):
 
     def _check_for_conflicts(self, kwargs):
         for argument in kwargs:
-            argument_conflicts_with = self._convert_to_iterable_if_not_none(self._arguments_list[argument]['conflicts_with'])
-            if argument_conflicts_with is not None:
-                for conflict in argument_conflicts_with:
-                    if self._arguments_list[conflict]['mandatory'] or conflict in kwargs:
-                        raise ValueError("Argument %s conflicts with %s" % (argument, conflict))
+            for conflict in self._arguments_list[argument]['conflicts_with']:
+                if self._arguments_list[conflict]['mandatory'] or conflict in kwargs:
+                    raise ValueError("Argument %s conflicts with %s" % (argument, conflict))
 
     def parse_args(self, **kwargs):
         kwargs = {x: y for x, y in kwargs.items() if y is not None}  # Eliminate kwargs which have 'None' value
