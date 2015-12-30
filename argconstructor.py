@@ -11,17 +11,17 @@ class ArgConstructor(object):
         self._parameters_separator = str(parameters_separator)
         self._arguments_list = OrderedDict()
 
-    def add_arguments(self, name, flag,
-                      mandatory=False,
-                      default=None,
-                      min_arguments=0,
-                      max_arguments=None,
-                      flag_separator=' ',
-                      choices=None,
-                      requires=None,
-                      required_by=None,
-                      conflicts_with=None,
-                      args_separator=' '):
+    def add_argument(self, name, flag,
+                     mandatory=False,
+                     default=None,
+                     min_arguments=0,
+                     max_arguments=None,
+                     flag_separator=' ',
+                     choices=None,
+                     requires=None,
+                     required_by=None,
+                     conflicts_with=None,
+                     args_separator=' '):
         """Add an argument to the constructor
 
         :param name: name of the argument. Must be unique constructor-wide
