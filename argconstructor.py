@@ -3,6 +3,11 @@ from collections import OrderedDict
 
 class ArgConstructor(object):
     def __init__(self, parameters_separator=' '):
+        """Initialize an ArgConstructor object
+
+        :param parameters_separator: a string to put between the arguments in the argument string
+        :type parameters_separator: str
+        """
         self._parameters_separator = str(parameters_separator)
         self._arguments_list = OrderedDict()
 
@@ -17,6 +22,27 @@ class ArgConstructor(object):
                       required_by=None,
                       conflicts_with=None,
                       args_separator=' '):
+        """Add an argument to the constructor
+
+        :param name: name of the argument. Must be unique constructor-wide
+        :type name: str
+        :param flag: string to be used as a flag for this argument
+        :type flag: str
+        :param mandatory: True if the parameter is required in the argument string
+        :type mandatory: bool
+        :param default: default value for the parameter
+        :param min_arguments: minimum number of arguments, 0 if no restriction
+        :type min_arguments: int
+        :param max_arguments: maximum number of arguments, None if no restriction
+        :type max_arguments: int|NoneType
+        :param flag_separator: string to put between the flag and the first parameter
+        :type flag_separator: str
+        :param choices: if supplied - the allowed values for the argument is restricted to it
+        :param requires: one or more arguments this argument depends on
+        :param required_by: one or more arguments this argument is depended by
+        :param conflicts_with: one or more arguments this argument must not be supplied together with
+        :param args_separator: string to put between parameters of the argument
+        """
         # Check if we already have that parameter
         if name in self._arguments_list:
             raise ValueError("parameter %s already exists" % name)
@@ -56,11 +82,28 @@ class ArgConstructor(object):
 
     @staticmethod
     def _check_against_choices(name, value, choices):
+        """Raise an error if parameter does not match one of the choises
+
+        :param name: name of an argument. Used only to raise meaningful exceptions
+        :type name: str
+        :param value: value supplied to the argument in parse_args
+        :param choices: values which are allowed for an argument to take. None if no restrictions are applied
+        """
         if choices is not None and value not in choices:
             raise ValueError("Parameter %s must be one of the %s, got %s instead" % (name, choices, value))
 
     @classmethod
     def _parse_arg(cls, name, parameters, value):
+        """Construct part of the argument string for one argument
+
+        :param name: name of an argument. Used only to raise meaningful exceptions
+        :type name: str
+        :param parameters: dict with argument's properties
+        :type parameters: dict
+        :param value: value supplied to the argument in parse_args
+        :return: part of the argument string for this particular argument
+        :rtype: str
+        """
         if value is None:
             if parameters['mandatory']:
                 if parameters['default'] is not None:
@@ -96,16 +139,18 @@ class ArgConstructor(object):
         ))
 
     @staticmethod
-    def _append_if_not_none(container, value):
-        if value is not None:
-            container.append(value)
+    def _append_if_not_none(container, element):
+        """Append element to a container if element is not None"""
+        if element is not None:
+            container.append(element)
 
     @staticmethod
     def _convert_to_iterable(arg, cast_func=lambda x: x):
         """Converts any object to an iterable
 
-        :param arg: any object to convest to iterable
+        :param arg: any object to convert to iterable
         :param cast_func: function to apply to each element of the iterable
+        :type cast_func: callable
         :return:
             - list with one element if arg is not iterable;
             - empty list if arg is None;
@@ -120,6 +165,7 @@ class ArgConstructor(object):
             return [cast_func(x) for x in arg]
 
     def _check_dependencies(self, kwargs):
+        """Check if all dependencies are met"""
         dependants = {}
         for argument in self._arguments_list:
             if argument not in dependants:
@@ -137,12 +183,20 @@ class ArgConstructor(object):
                     self._arguments_list[dep]['mandatory'] = True
 
     def _check_for_conflicts(self, kwargs):
+        """Check if there's no conflicts in supplied arguments"""
         for argument in kwargs:
             for conflict in self._arguments_list[argument]['conflicts_with']:
                 if self._arguments_list[conflict]['mandatory'] or conflict in kwargs:
                     raise ValueError("Argument %s conflicts with %s" % (argument, conflict))
 
     def parse_args(self, **kwargs):
+        """Construct an arguments string using given values
+
+        :param kwargs: every positional argument should be a value for previously added arguments
+        :type kwargs: dict
+        :return: arguments string
+        :rtype: str
+        """
         kwargs = {x: y for x, y in kwargs.items() if y is not None}  # Eliminate kwargs which have 'None' value
 
         self._check_dependencies(kwargs)
