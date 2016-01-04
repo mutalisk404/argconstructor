@@ -2,14 +2,18 @@ from collections import OrderedDict
 
 
 class ArgConstructor(object):
-    def __init__(self, parameters_separator=' '):
+    def __init__(self, parameters_separator=' ', strict=True):
         """Initialize an ArgConstructor object
 
         :param parameters_separator: a string to put between the arguments in the argument string
         :type parameters_separator: str
+        :param strict: if True - the exception is raised if parse_args is called with an argument which wasn't added by
+            add_argument. It's useful to set it to False to supply locals() to parse_args
+        :type strict: bool
         """
         self._parameters_separator = str(parameters_separator)
         self._arguments_list = OrderedDict()
+        self._strict = bool(strict)
 
     def add_argument(self, name, flag,
                      mandatory=False,
@@ -198,6 +202,13 @@ class ArgConstructor(object):
         :rtype: str
         """
         kwargs = {x: y for x, y in kwargs.items() if y is not None}  # Eliminate kwargs which have 'None' value
+
+        # If we have surplus arguments raise or delete them depending on _strict
+        for arg in [x for x in kwargs if x not in self._arguments_list]:
+            if self._strict:
+                raise KeyError("Argument %s not found" % arg)
+            else:
+                del kwargs[arg]
 
         self._check_dependencies(kwargs)
         self._check_for_conflicts(kwargs)
