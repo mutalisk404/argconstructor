@@ -18,8 +18,7 @@ class ArgConstructor(object):
     def add_argument(self, name, flag,
                      mandatory=False,
                      default=None,
-                     min_arguments=0,
-                     max_arguments=None,
+                     arguments=None,
                      flag_separator=' ',
                      choices=None,
                      requires=None,
@@ -35,10 +34,8 @@ class ArgConstructor(object):
         :param mandatory: True if the parameter is required in the argument string
         :type mandatory: bool
         :param default: default value for the parameter
-        :param min_arguments: minimum number of arguments, 0 if no restriction
-        :type min_arguments: int
-        :param max_arguments: maximum number of arguments, None if no restriction
-        :type max_arguments: int|NoneType
+        :param arguments: (min, max) tuple or exact number of parameters argument takes
+        :type arguments: int|tuple
         :param flag_separator: string to put between the flag and the first parameter
         :type flag_separator: str
         :param choices: if supplied - the allowed values for the argument is restricted to it
@@ -53,20 +50,17 @@ class ArgConstructor(object):
 
         # Basic parameters checks and type casts
         flag = str(flag)
-        min_arguments = int(min_arguments) if int(min_arguments) >= 0 else 0
-        max_arguments = int(max_arguments) if max_arguments is not None else None
         mandatory = bool(mandatory)
         flag_separator = str(flag_separator)
         args_separator = str(args_separator)
         requires = self._convert_to_iterable(requires, str)
         required_by = self._convert_to_iterable(required_by, str)
         conflicts_with = self._convert_to_iterable(conflicts_with, str)
+        min_arguments, max_arguments = self._unpack_num_arguments(arguments)
 
         # Advanced argument checks
         if choices is not None and (not hasattr(choices, '__iter__') or len(choices) == 0):
             raise ValueError("choices must be a non-zero long iterable")
-        if max_arguments is not None and max_arguments < min_arguments:
-            raise ValueError("'min_arguments' must be greater or equal than 'max_arguments'")
 
         params = {}
         for param in ('flag',
@@ -83,6 +77,26 @@ class ArgConstructor(object):
             params[param] = locals()[param]
 
         self._arguments_list[name] = params
+
+    @staticmethod
+    def _unpack_num_arguments(arguments):
+        if hasattr(arguments, '__iter__'):
+            if len(arguments) == 2:
+                min_arguments = arguments[0]
+                max_arguments = arguments[1]
+            else:
+                raise ValueError("'arguments' must be int or 2-item iterable")
+        else:
+            min_arguments = max_arguments = int(arguments) if arguments is not None else None
+
+        if min_arguments is None or min_arguments < 0:
+            min_arguments = 0
+        if max_arguments is None:
+            max_arguments = float('inf')
+        if min_arguments > max_arguments:
+            raise ValueError("Lower value from 'arguments' must be greater or equal than higher one")
+
+        return min_arguments, max_arguments
 
     @staticmethod
     def _check_against_choices(name, value, choices):
@@ -123,15 +137,21 @@ class ArgConstructor(object):
 
         if parameters['min_arguments'] == parameters['max_arguments'] == 0:
             return parameters['flag']
-        elif len(value) < parameters['min_arguments'] or (parameters['max_arguments'] is not None and len(value) > parameters['max_arguments']):
-            raise ValueError(
-                    "Parameter '%s' takes from %d to %s arguments, got %d instead" % (
-                        name,
-                        parameters['min_arguments'],
-                        parameters['max_arguments'] if parameters['max_arguments'] is not None else "infinite number of",
-                        len(value)
-                    )
-            )
+        elif len(value) < parameters['min_arguments'] or len(value) > parameters['max_arguments']:
+            if parameters['min_arguments'] == parameters['max_arguments']:
+                error_message = "Parameter '%s' takes exactly %d argument(s), got %d instead" % (
+                    name,
+                    parameters['min_arguments'],
+                    len(value)
+                )
+            else:
+                error_message = "Parameter '%s' takes from %d to %s arguments, got %d instead" % (
+                    name,
+                    parameters['min_arguments'],
+                    parameters['max_arguments'] if parameters['max_arguments'] != float('inf') else "infinite number of",
+                    len(value)
+                )
+            raise ValueError(error_message)
 
         for arg in value:
             # Check if all the values are from choices, if supplied
